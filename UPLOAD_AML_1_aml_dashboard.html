@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AML Transaction Monitoring System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0a0f1e;color:#e2e8f0;min-height:100vh}
+.topbar{background:linear-gradient(135deg,#0f172a,#1e1b4b);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #334155}
+.topbar h1{font-size:15px;font-weight:700;color:#fff;letter-spacing:.03em}
+.topbar span{font-size:11px;color:#94a3b8}
+.badge{background:#dc2626;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:8px;font-weight:700;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.container{max-width:1280px;margin:0 auto;padding:20px 24px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.kpi{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
+.kpi .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:6px}
+.kpi .value{font-size:26px;font-weight:800;color:#f1f5f9;line-height:1}
+.kpi .sub{font-size:11px;margin-top:5px;color:#64748b}
+.kpi .sub.alert{color:#ef4444;font-weight:600}
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.charts-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.card{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:18px}
+.card h3{font-size:11px;font-weight:700;color:#64748b;margin-bottom:14px;text-transform:uppercase;letter-spacing:.06em}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{text-align:left;padding:6px 8px;background:#1e293b;color:#64748b;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+td{padding:6px 8px;border-bottom:1px solid #1e293b;color:#cbd5e1}
+tr:last-child td{border:none}
+.pill{display:inline-block;border-radius:99px;font-size:10px;font-weight:700;padding:2px 8px}
+.high{background:#7f1d1d;color:#fca5a5}
+.medium{background:#78350f;color:#fcd34d}
+.low{background:#14532d;color:#86efac}
+.toggle-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tbtn{font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid #334155;background:transparent;color:#64748b;cursor:pointer;transition:all .15s}
+.tbtn.active{background:#4f46e5;color:#fff;border-color:#4f46e5}
+.footer{text-align:center;font-size:10px;color:#334155;padding:16px;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <span style="font-size:11px;color:#64748b">Enterprise Risk Management  |  Anti-Money Laundering</span>
+    <h1>AML Transaction Monitoring System <span class="badge">LIVE</span></h1>
+  </div>
+  <span>Dataset: 10,000 transactions  |  Jan–Dec 2024  |  Jeevan Lal Mourya</span>
+</div>
+<div class="container">
+
+  <div class="kpi-grid">
+    <div class="kpi" style="--accent:#ef4444">
+      <div class="label">Suspicious Transactions</div>
+      <div class="value">800</div>
+      <div class="sub alert">8.0% of total volume</div>
+    </div>
+    <div class="kpi" style="--accent:#f59e0b">
+      <div class="label">High Risk Alerts</div>
+      <div class="value">382</div>
+      <div class="sub alert">Require immediate investigation</div>
+    </div>
+    <div class="kpi" style="--accent:#8b5cf6">
+      <div class="label">Suspicious Volume</div>
+      <div class="value">$34.5M</div>
+      <div class="sub">Flagged transaction value</div>
+    </div>
+    <div class="kpi" style="--accent:#06b6d4">
+      <div class="label">Avg Risk Score</div>
+      <div class="value">15.3</div>
+      <div class="sub">Portfolio-wide AML score</div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="card">
+      <h3>Monthly suspicious transaction trend</h3>
+      <div class="toggle-row">
+        <button class="tbtn active" onclick="showAML('count',this)">Alert Count</button>
+        <button class="tbtn" onclick="showAML('volume',this)">Volume ($M)</button>
+        <button class="tbtn" onclick="showAML('risk',this)">Avg Risk Score</button>
+      </div>
+      <canvas id="amlTrend" height="88"></canvas>
+    </div>
+    <div class="card">
+      <h3>Alert level distribution</h3>
+      <canvas id="alertDonut" height="160"></canvas>
+    </div>
+  </div>
+
+  <div class="charts-row2">
+    <div class="card">
+      <h3>Suspicious rate by country</h3>
+      <canvas id="countryChart" height="160"></canvas>
+    </div>
+    <div class="card">
+      <h3>Risk by transaction type</h3>
+      <canvas id="typeChart" height="160"></canvas>
+    </div>
+    <div class="card">
+      <h3>Data validation — all checks passed</h3>
+      <table>
+        <thead><tr><th>Validation Check</th><th>Issues</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Null transaction IDs</td><td>0</td><td><span class="pill low">Pass</span></td></tr>
+          <tr><td>Negative amounts</td><td>0</td><td><span class="pill low">Pass</span></td></tr>
+          <tr><td>Invalid alert levels</td><td>0</td><td><span class="pill low">Pass</span></td></tr>
+          <tr><td>Missing country codes</td><td>0</td><td><span class="pill low">Pass</span></td></tr>
+          <tr><td>Risk score out of range</td><td>0</td><td><span class="pill low">Pass</span></td></tr>
+          <tr><td>Duplicate transaction IDs</td><td>0</td><td><span class="pill low">Pass</span></td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px;background:#14532d22;border-radius:6px;padding:8px 10px;font-size:11px;color:#86efac;border:1px solid #14532d">
+        ✓ 10,000 records certified clean — audit ready
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <h3>High-risk transaction investigations — top suspicious cases</h3>
+    <table>
+      <thead><tr><th>Transaction ID</th><th>Type</th><th>Amount</th><th>Country</th><th>Hour</th><th>Risk Score</th><th>Alert</th><th>Flags</th></tr></thead>
+      <tbody id="txTable"></tbody>
+    </table>
+  </div>
+
+</div>
+<div class="footer">AML Transaction Monitoring System  ·  Built with SQL + Python + Chart.js  ·  Portfolio Project — Jeevan Lal Mourya  ·  Risk Analyst Application</div>
+
+<script>
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const suspicious = [73,60,77,63,74,57,71,62,61,74,70,58];
+const volumes = [5.58,5.07,5.96,4.86,5.84,5.28,5.76,5.68,4.98,5.42,6.54,5.05];
+const risks = [16.29,15.26,15.84,14.91,15.16,14.67,16.14,15.04,14.38,15.92,15.87,13.69];
+const PURPLE='#4f46e5'; const RED='#ef4444'; const AMBER='#f59e0b'; const CYAN='#06b6d4';
+
+let trendChart;
+function buildTrend(metric) {
+  const data = metric==='count'?suspicious:metric==='volume'?volumes:risks;
+  const label = metric==='count'?'Suspicious Alerts':metric==='volume'?'Volume ($M)':'Avg Risk Score';
+  const color = metric==='count'?RED:metric==='volume'?AMBER:CYAN;
+  if(trendChart) trendChart.destroy();
+  trendChart = new Chart(document.getElementById('amlTrend').getContext('2d'),{
+    type:'line',
+    data:{labels:months,datasets:[{label,data,borderColor:color,backgroundColor:color+'22',fill:true,tension:0.4,pointRadius:3,borderWidth:2}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1e293b'},ticks:{color:'#64748b',font:{size:10}}},y:{grid:{color:'#1e293b'},ticks:{color:'#64748b',font:{size:10}}}}}
+  });
+}
+buildTrend('count');
+function showAML(m,btn){document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');buildTrend(m);}
+
+new Chart(document.getElementById('alertDonut').getContext('2d'),{
+  type:'doughnut',
+  data:{labels:['HIGH','MEDIUM','LOW'],datasets:[{data:[382,315,9303],backgroundColor:['#7f1d1d','#78350f','#14532d'],borderColor:['#ef4444','#f59e0b','#22c55e'],borderWidth:1}]},
+  options:{cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:10},padding:8}}}}
+});
+
+new Chart(document.getElementById('countryChart').getContext('2d'),{
+  type:'bar',
+  data:{labels:['RU','NG','IR','DE','CN','UK','US','MX'],datasets:[{label:'Suspicious Rate %',data:[17.3,15.8,15.2,5.8,5.7,5.3,4.6,3.6],backgroundColor:['#7f1d1d','#7f1d1d','#7f1d1d','#1e40af','#1e40af','#1e40af','#14532d','#14532d'],borderRadius:3}]},
+  options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10}}},y:{grid:{color:'#1e293b'},ticks:{color:'#64748b',font:{size:10},callback:v=>v+'%'}}}}
+});
+
+new Chart(document.getElementById('typeChart').getContext('2d'),{
+  type:'bar',
+  data:{labels:['CASH_OUT','TRANSFER','PAYMENT','CASH_IN','DEBIT'],datasets:[{label:'Avg Risk Score',data:[21.8,21.1,10.3,10.3,10.1],backgroundColor:[RED,RED,'#1e40af','#1e40af','#1e40af'],borderRadius:3}]},
+  options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10}}},y:{grid:{color:'#1e293b'},ticks:{color:'#64748b',font:{size:10}}}}}
+});
+
+const topTx = [
+  {id:'TXN004821',type:'CASH_OUT',amount:'$98,440',country:'RU',hour:'02:00',risk:95,alert:'HIGH',flags:'High-risk country, Off-hours, Large amount'},
+  {id:'TXN002156',type:'TRANSFER',amount:'$9,750',country:'NG',hour:'03:00',risk:92,alert:'HIGH',flags:'Structuring, High-risk country, Off-hours'},
+  {id:'TXN007834',type:'CASH_OUT',amount:'$85,000',country:'IR',hour:'23:00',risk:90,alert:'HIGH',flags:'Round amount, High-risk country, Off-hours'},
+  {id:'TXN001299',type:'TRANSFER',amount:'$9,820',country:'RU',hour:'01:00',risk:88,alert:'HIGH',flags:'Structuring, Off-hours, Rapid movement'},
+  {id:'TXN006543',type:'CASH_OUT',amount:'$72,000',country:'NG',hour:'04:00',risk:85,alert:'HIGH',flags:'High-risk country, Round amount, Large'},
+  {id:'TXN003871',type:'TRANSFER',amount:'$9,910',country:'US',hour:'02:00',risk:75,alert:'HIGH',flags:'Structuring, Off-hours'},
+  {id:'TXN008234',type:'CASH_OUT',amount:'$55,500',country:'IR',hour:'23:00',risk:72,alert:'HIGH',flags:'High-risk country, Large amount'},
+  {id:'TXN005123',type:'TRANSFER',amount:'$48,000',country:'CN',hour:'03:00',risk:68,alert:'MEDIUM',flags:'Round amount, Off-hours'},
+];
+const tb = document.getElementById('txTable');
+topTx.forEach(t=>{
+  const cls = t.alert==='HIGH'?'high':t.alert==='MEDIUM'?'medium':'low';
+  tb.innerHTML+=`<tr><td><code style="font-size:10px;color:#818cf8">${t.id}</code></td><td>${t.type}</td><td>${t.amount}</td><td>${t.country}</td><td>${t.hour}</td><td><strong style="color:${t.risk>80?'#ef4444':t.risk>60?'#f59e0b':'#22c55e'}">${t.risk}</strong></td><td><span class="pill ${cls}">${t.alert}</span></td><td style="color:#94a3b8;font-size:10px">${t.flags}</td></tr>`;
+});
+</script>
+</body>
+</html>
